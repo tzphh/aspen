@@ -64,6 +64,7 @@ pbbs::sequence<char> readStringFromFile(const char* fileName) {
   return bytes;
 }
 
+/* 读取图数据 */
 auto read_unweighted_graph(const char* fname, bool is_symmetric, bool mmap=false) {
   pbbs::sequence<char*> tokens;
   pbbs::sequence<char> S;

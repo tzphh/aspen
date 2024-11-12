@@ -1,4 +1,4 @@
-# Aspen
+#Aspen
 
 This repository provides  experiments, scripts, and instructions for reproducing
 the experiments in our paper, *Low-Latency Graph Streaming Using Compressed
@@ -20,7 +20,7 @@ completeness, and to ensure that our results for very large graphs are
 reproducible. We have made all graphs used in our paper publicly-available to
 ensure that our results are reproducible and can be built upon.
 
-# Getting Started Guide
+#Getting Started Guide
 This Getting Started Guide gives an overview of
 1. Using Aspen as a Graph-Streaming System
 
@@ -164,7 +164,7 @@ the fastest way to get up and running. The files are located at
 `https://metis.feralhosting.com/laxman/graphs`, and can be downloaded
 using `wget`, as follows:
 ```
-# listing of  https://metis.feralhosting.com/laxman/graphs/
+#listing of https:  // metis.feralhosting.com/laxman/graphs/
 clueweb_sym.bytepda                                21-Feb-2019 04:45     99G
 com-orkut.adj                                      23-Feb-2019 05:37      2G
 hyperlink2012_sym.bytepda                          22-Feb-2019 02:00    351G
@@ -172,7 +172,7 @@ hyperlink2014_sym.bytepda                          21-Feb-2019 07:58    184G
 soc-LiveJournal1_sym.adj                           23-Feb-2019 05:38    640M
 twitter_SJ.adj                                     23-Feb-2019 05:58     20G
 
-# Download the soc-LiveJournal graph to the inputs/ directory
+#Download the soc - LiveJournal graph to the inputs / directory
 $ wget https://metis.feralhosting.com/laxman/graphs/soc-LiveJournal1_sym.adj inputs/
 ```
 
@@ -207,7 +207,7 @@ will give the executable file `memory_footprint`.
 
 It can be used as follows to reproduce the results in Table 2 in [1]:
 ```
-# ./memory_footprint [-f graph_file]
+#./ memory_footprint[- f graph_file]
 $ ./memory_footprint -s -f inputs/soc-LiveJournal1_sym.adj
 Running Aspen using 144 threads.
 n = 4847571 m = 85702474
@@ -253,8 +253,8 @@ will give the executable file `run_static_algorithm`.
 
 It can be used as follows:
 ```
-# ./run_static_algorithm [-t testname -r rounds -f graph_file]
-#   where testname is one of: {BFS, BC, MIS, KHOP, NIBBLE}
+#./ run_static_algorithm[- t testname - r rounds - f graph_file]
+#where testname is one of : {BFS, BC, MIS, KHOP, NIBBLE }
 $ numactl -i all ./run_static_algorithm -t BFS -src 10012 -s -f inputs/twitter_sym.adj
 Running Aspen using 144 threads.
 n = 41652231 m = 2405026092
@@ -312,7 +312,7 @@ will give the executable file `run_batch_updates`.
 
 It can be used as follows:
 ```
-# ./run_batch_updates [-f graph_file]
+#./ run_batch_updates[- f graph_file]
 $ numactl -i all ./run_batch_updates -s -f /ssd1/graphs/bench_experiments/soc-LiveJournal1_sym.adj
 Running with 144 threads
 n = 4847571 m = 85702474
@@ -352,7 +352,7 @@ will give the executable file `run_simultaneous_updates_queries`.
 
 It can be used as follows:
 ```
-# ./run_simultaneous_updates_queries [-f graph_file]
+#./ run_simultaneous_updates_queries[- f graph_file]
 $ numactl -i all ./run_simultaneous_updates_queries -queryiters 200 -m -s -f inputs/soc-LiveJournal_sym.adj
 Running with 144 threads
 n = 4847571 m = 85702474
@@ -375,8 +375,7 @@ The following command will run the same experiments used to generate the results
 ```
 The data for each graph will be written to `data/simultaneous_updates_queries/graph.dat`.
 
-
-# Step-by-Step Instructions
+#Step - by - Step Instructions
 In this section of our artifact, we describe how to set up and run experiments on
 the large Web graphs used in our paper.
 
@@ -419,7 +418,7 @@ We downloaded STINGER from its [github repository](https://github.com/stingergra
 We used the following variable settings in STINGER/CMakeLists.txt, which
 produced the fastest times and lowest memory usage based on our experiments.
 ```
-# Memory size configuration bits for stinger_core
+#Memory size configuration bits for stinger_core
 set(STINGER_DEFAULT_VERTICES "(1L<<30)" CACHE STRING "Default number of vertices")
 set(STINGER_DEFAULT_NUMETYPES "1" CACHE STRING "Default number of edge types")
 set(STINGER_DEFAULT_NUMVTYPES "1" CACHE STRING "Default number of vertex types")
@@ -436,7 +435,7 @@ numactl -i all env STINGER_MAX_MEMSIZE=100G ./bin/stinger_server
 ```
 On a separate prompt, we ran a batch-update job as follows:
 ```
-# ./stinger_rmat_edge_generator [-p port] [-a server_addr] [-n num_vertices] [-x batch_size] [-y num_batches] [-i]
+#./ stinger_rmat_edge_generator[- p port][- a server_addr][- n num_vertices][- x batch_size][- y num_batches][- i]
 ./bin/stinger_rmat_edge_generator -n 536870912 -x 1000000
 ```
 which inserts batches of 1M edges at a time, where edges are sampled from an RMAT generator, and the number of vertices is 2^29.

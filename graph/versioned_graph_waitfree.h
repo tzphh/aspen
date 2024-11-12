@@ -7,11 +7,9 @@
 
 #include <limits>
 
-
 #define MFENCE __sync_synchronize
 
-
-template <class snapshot_graph>
+template<class snapshot_graph>
 struct versioned_graph {
 
   using Node = typename snapshot_graph::Node;
@@ -27,10 +25,9 @@ struct versioned_graph {
   using announcement = uint64_t;
 
   // Data for wait-free maintenance
-  static constexpr size_t padding = 4; // 128 uint64_t's/ptrs
+  static constexpr size_t padding = 4;  // 128 uint64_t's/ptrs
   size_t num_threads;
   volatile status current_version = ops::EMPTY;
-
 
   struct alignas(16) thread_data {
     announcement announce;
@@ -41,9 +38,9 @@ struct versioned_graph {
   thread_data* tdata;
 
   void collect(size_t id, Node* old_nd) {
-    size_t offset = id*padding;
-    Node* nd = tdata[offset].version; //ptr
-    assert(nd == old_nd); // should be the same pointer.
+    size_t offset = id * padding;
+    Node* nd = tdata[offset].version;  // ptr
+    assert(nd == old_nd);              // should be the same pointer.
     if (!nd) return;
     if (__sync_bool_compare_and_swap(&(tdata[offset].version), old_nd, nullptr)) {
       // we got the handle to this version; GC it.
@@ -60,11 +57,11 @@ struct versioned_graph {
     bool set_val = false;
     // Searches for an empty slot.
     for (size_t i = 0; i < num_threads; i++) {
-      size_t offset = i*padding;
+      size_t offset = i * padding;
       if (tdata[offset].version == nullptr) {
-        new_ver = ops::combine(i, ops::get_timestamp(current_version)+1, 0);
+        new_ver = ops::combine(i, ops::get_timestamp(current_version) + 1, 0);
         tdata[offset].stat = ops::combine(new_ver, 0);
-        tdata[offset].version = t; // put your new data in slot
+        tdata[offset].version = t;  // put your new data in slot
         debug(cout << "set version at offset = " << offset << endl;);
         set_val = true;
         break;
@@ -79,9 +76,9 @@ struct versioned_graph {
     debug(cout << "new_timestamp = " << ops::get_timestamp(current_version) << endl;);
 
     // Help
-    for(size_t i = 0; i < num_threads; i++) {
-      size_t offset = i*padding;
-      for(size_t j = 0; j < 3; j++) {
+    for (size_t i = 0; i < num_threads; i++) {
+      size_t offset = i * padding;
+      for (size_t j = 0; j < 3; j++) {
         announcement ann = tdata[offset].announce;
         if (ops::get_flag(ann)) {
           pbbs::atomic_compare_and_swap(&(tdata[offset].announce), ann, ops::combine(new_ver, 0));
@@ -94,7 +91,7 @@ struct versioned_graph {
   size_t acquire() {
 
     int id = worker_id();
-    size_t offset = id*padding;
+    size_t offset = id * padding;
 
     announcement old = ops::combine(ops::EMPTY, 1);
     tdata[offset].announce = old;
@@ -108,7 +105,7 @@ struct versioned_graph {
       old = ops::combine(cur, 1);
       // read again
       status new_cur = current_version;
-      if (cur == new_cur) { //  read a stable version
+      if (cur == new_cur) {  //  read a stable version
         pbbs::atomic_compare_and_swap(&(tdata[offset].announce), old, ops::combine(cur, 0));
         return ops::get_idx(tdata[offset].announce);
       }
@@ -119,67 +116,65 @@ struct versioned_graph {
     return ops::get_idx(tdata[offset].announce);
   }
 
-
   // Acquires a new version for the updater.
   size_t acquire_update() {
     int id = worker_id();
-    tdata[padding*id].announce = ops::combine(current_version, 0);
+    tdata[padding * id].announce = ops::combine(current_version, 0);
     return ops::get_idx(current_version);
   }
-
 
   // Releases this thread's version.
   void release() {
     int id = worker_id();
-    size_t offset = id*padding;
+    size_t offset = id * padding;
     status v = ops::get_version(tdata[offset].announce);
     tdata[offset].announce = ops::EMPTY;
     MFENCE();
     if (v == current_version) {
-      return; // someone else will handle it
+      return;  // someone else will handle it
     }
-    status s = tdata[padding*ops::get_idx(v)].stat;
+    status s = tdata[padding * ops::get_idx(v)].stat;
 
-    if (v != ops::get_version(s)){
+    if (v != ops::get_version(s)) {
       return;
     }
 
     if (ops::get_flag(s) == 0) {
-      if (!pbbs::atomic_compare_and_swap(&(tdata[padding*ops::get_idx(v)].stat), s, ops::combine(ops::get_version(s), 1))) {
+      if (!pbbs::atomic_compare_and_swap(&(tdata[padding * ops::get_idx(v)].stat), s,
+                                         ops::combine(ops::get_version(s), 1))) {
         return;
       }
       for (int i = 0; i < num_threads; i++) {
-        size_t offset = i*padding;
-        if (tdata[offset].announce == ops::combine(v,1)) {
-            pbbs::atomic_compare_and_swap(&tdata[offset].announce, ops::combine(v,1), ops::combine(v,0));
+        size_t offset = i * padding;
+        if (tdata[offset].announce == ops::combine(v, 1)) {
+          pbbs::atomic_compare_and_swap(&tdata[offset].announce, ops::combine(v, 1), ops::combine(v, 0));
         }
       }
       s = ops::combine(ops::get_version(s), 2);
-      tdata[padding*ops::get_idx(v)].stat = s;
+      tdata[padding * ops::get_idx(v)].stat = s;
       MFENCE();
     }
     if (ops::get_flag(s) == 2) {
       for (int i = 0; i < num_threads; i++) {
-        size_t offset = i*padding;
-        if (tdata[offset].announce == ops::combine(v,0)) {
+        size_t offset = i * padding;
+        if (tdata[offset].announce == ops::combine(v, 0)) {
           return;
         }
       }
-      if (pbbs::atomic_compare_and_swap(&(tdata[padding*ops::get_idx(v)].stat), s, ops::EMPTY)) {
-        collect(ops::get_idx(v), tdata[padding*ops::get_idx(v)].version);
+      if (pbbs::atomic_compare_and_swap(&(tdata[padding * ops::get_idx(v)].stat), s, ops::EMPTY)) {
+        collect(ops::get_idx(v), tdata[padding * ops::get_idx(v)].version);
       }
     }
   }
   // ================================== End Wait-Free Code =====================================
 
-
   void init_data() {
     num_threads = std::thread::hardware_concurrency();
-    tdata = pbbs::new_array<thread_data>(num_threads*padding);
-    for (size_t i=0; i<num_threads; i++) {
-      tdata[i*padding].version = nullptr;
-      tdata[i*padding].stat = ops::EMPTY;
-      tdata[i*padding].announce = ops::EMPTY;
+    tdata = pbbs::new_array<thread_data>(num_threads * padding);
+    for (size_t i = 0; i < num_threads; i++) {
+      tdata[i * padding].version = nullptr;
+      tdata[i * padding].stat = ops::EMPTY;
+      tdata[i * padding].announce = ops::EMPTY;
     }
   }
 
@@ -203,15 +198,13 @@ struct versioned_graph {
     debug(cout << "Finished build (move)" << endl;);
   }
 
-  versioned_graph() {
-    init_data();
-  }
+  versioned_graph() { init_data(); }
 
   version acquire_version() {
     debug(cout << "== Acquire version" << endl;);
     size_t idx = acquire();
     debug(cout << "  idx = " << idx << endl;);
-    auto root = tdata[idx*padding].version;
+    auto root = tdata[idx * padding].version;
     debug(cout << "  root = " << ((size_t)root) << endl;);
     debug(cout << "  root->ref_cnt = " << root->ref_cnt << endl;);
     return version(snapshot_graph(root));
@@ -222,17 +215,17 @@ struct versioned_graph {
     debug(cout << "== Releasing root = " << ((size_t)root) << " " << root->ref_cnt << endl;);
 
     assert(root->ref_cnt > 0);
-    S.graph.clear_root(); //relinquish ownership
+    S.graph.clear_root();  // relinquish ownership
 
     release();
   }
 
-
   // single-entry
-  void insert_edges_batch(size_t m, tuple<uintV, uintV>* edges, bool sorted=false, bool remove_dups=false, size_t nn = std::numeric_limits<size_t>::max(), bool run_seq=false) {
+  void insert_edges_batch(size_t m, tuple<uintV, uintV>* edges, bool sorted = false, bool remove_dups = false,
+                          size_t nn = std::numeric_limits<size_t>::max(), bool run_seq = false) {
     debug(cout << "Insert_edges_batch" << endl;);
     size_t idx = acquire_update();
-    auto root = tdata[padding*idx].version; // no ref-bump here, just a raw pointer to a tree root
+    auto root = tdata[padding * idx].version;  // no ref-bump here, just a raw pointer to a tree root
 
     snapshot_graph G(root);
 
@@ -246,24 +239,24 @@ struct versioned_graph {
     debug(cout << "new_root ref_cnt = " << new_root->ref_cnt << endl;);
 
     set(G_next.get_root());
-    debug(cout << "Finished insert edges" << endl << endl;
-    cout << "n = " << G.num_vertices() << endl;
-    cout << "n' = " << G_next.num_vertices() << endl;);
+    debug(cout << "Finished insert edges" << endl
+               << endl;
+          cout << "n = " << G.num_vertices() << endl; cout << "n' = " << G_next.num_vertices() << endl;);
 
     G_next.clear_root();
     G.clear_root();
 
-    release(); // it is the current version; call it a day
+    release();  // it is the current version; call it a day
   }
 
-
   // single-entry
-  void delete_edges_batch(size_t m, tuple<uintV, uintV>* edges, bool sorted=false, bool remove_dups=false, size_t nn = std::numeric_limits<size_t>::max(), bool run_seq=false) {
+  void delete_edges_batch(size_t m, tuple<uintV, uintV>* edges, bool sorted = false, bool remove_dups = false,
+                          size_t nn = std::numeric_limits<size_t>::max(), bool run_seq = false) {
     debug(cout << "Delete_edges_batch" << endl;);
     size_t idx = acquire_update();
     debug(cout << "idx = " << idx << endl;);
-    auto root = tdata[padding*idx].version;
-    debug(cout << "root = " << ((size_t) root) << " " << root->ref_cnt << endl;);
+    auto root = tdata[padding * idx].version;
+    debug(cout << "root = " << ((size_t)root) << " " << root->ref_cnt << endl;);
 
     snapshot_graph G(root);
     debug(cout << "G.n = " << G.num_vertices() << endl;);
@@ -282,5 +275,4 @@ struct versioned_graph {
 
     release();
   }
-
 };

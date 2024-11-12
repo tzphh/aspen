@@ -11,7 +11,9 @@
 
 #include <limits>
 
+/* 定义名为 sym_immutable_graph_tree_plus 的结构体，用于表示一个不可变的图数据结构*/
 
+// bytes 转 gb
 static double format_gb(size_t bytes) {
   double gb = bytes;
   gb /= 1024.0;

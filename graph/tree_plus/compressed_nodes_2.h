@@ -2,6 +2,10 @@
 
 #include <cstring>
 
+// *******************************************
+// 压缩列表,定义node_x,表示容量为x的列表 
+// *******************************************
+
 #define def_node(x) \
   namespace node_##x { \
     struct node { \
@@ -48,7 +52,21 @@
 
 namespace compressed_lists {
 
-  def_node(8)
+  // def_node(8)
+  namespace node_8 {
+  struct node {
+    static constexpr const size_t node_array_size = 8;      // 编译时常量, 设置数组大小为 8
+    uchar neighbors[node_array_size];                       // 创建邻居数组，大小为 8
+    using allocator = list_allocator<node>;                 // 设置分配器类型
+
+    node() { }                                              // 默认构造函数
+    node(const node& other) {                               // 复制构造函数
+      auto their_array = other.neighbors;                   // 将其他节点的邻居数组指针
+      std::memcpy(neighbors, their_array, node_array_size); // 复制到当前节点的邻居数组
+    }
+  };
+}
+
   def_node(16)
   def_node(32)
   def_node(64)
