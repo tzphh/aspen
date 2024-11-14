@@ -22,22 +22,26 @@ namespace compressed_lists {
   static constexpr const size_t head_frequency = 8;
   static constexpr const size_t head_mask = (1 << head_frequency) - 1;
 
+  // 判断是否是head
   static bool is_head(const uintV& vtx_id) {
     return (pbbs::hash32_2(vtx_id) & head_mask) == 0;
   }
 
 
+  // 遍历邻居节点1
   template <class F>
   inline void map_array(uchar* node, const uintV& src, size_t offset, const F& f) {
     if (node) {
       auto read_iter = compressed_iter::read_iter(node, src);
       size_t deg = read_iter.deg;
-      for (size_t i=0; i<deg; i++) {
-        f(read_iter.next(), offset+i);
+      for (size_t i = 0; i < deg; i++) {
+        // 这里的f是一个function
+        f(read_iter.next(), offset + i);
       }
     }
   }
 
+  // 遍历邻居节点2
   template <class F>
   inline void map_nghs(uchar* node, const uintV& src, const F& f) {
     if (node) {
@@ -49,6 +53,7 @@ namespace compressed_lists {
     }
   }
 
+  // 统计符合条件的邻居节点数量
   template <class P>
   inline size_t count_pred(uchar* node, const uintV& src, const P& p) {
     size_t ct = 0;
@@ -62,6 +67,7 @@ namespace compressed_lists {
     return ct;
   }
 
+  // 基于deg估算不使用压缩的大小
   inline size_t uncompressed_size(uchar* node, const uintV& src) {
     size_t ct = 0;
     if (node) {
@@ -71,6 +77,7 @@ namespace compressed_lists {
     return ct;
   }
 
+  // 检查是否存在某个邻居满足f条件
   template <class F>
   inline bool iter_elms_cond(uchar* node, const uintV& src, const F& f) {
     if (node) {
@@ -83,6 +90,7 @@ namespace compressed_lists {
     return false;
   }
 
+  // 遍历邻居节点，执行操作f
   template <class F>
   inline void iter_elms(uchar* node, const uintV& src, const F& f) {
     if (node) {
@@ -95,6 +103,7 @@ namespace compressed_lists {
   }
 
 
+  // 根据输入序列S生成压缩列表
   template <class SQ>
   uchar* generate_tree_node(uintV key, uintV src, SQ& S,
                             size_t start, size_t end) {
@@ -108,6 +117,7 @@ namespace compressed_lists {
     return write_iter.finish();
   }
 
+  // 生成前缀列表
   template <class SQ>
   uchar* generate_plus(SQ& S, size_t first_head_ind, uintV src) {
     if (first_head_ind == 0) return nullptr;
@@ -119,6 +129,7 @@ namespace compressed_lists {
     return write_iter.finish();
   }
 
+  // 返回压缩邻接表中邻居的第一个和最后一个邻居
   inline tuple<uintV, uintV> first_and_last_keys(uchar* node, const uintV& src) {
     uintV first_key = UINT_V_MAX; uintV last_key = UINT_V_MAX;
     if (node) {
@@ -138,6 +149,7 @@ namespace compressed_lists {
     }
   }
 
+  // 将一个节点的邻居根据 split_key 划分为小于、等于和大于 split_key 的部分。然后分别返回两个子节点
   auto split_node(uchar* node, uintV src, uintV split_key) {
     uchar* lt = nullptr; uchar* gt = nullptr; bool found = false;
     if (node) {
@@ -168,6 +180,7 @@ namespace compressed_lists {
         gt = gt_iter.finish();
       }
     }
+    // 原空间没有GC？
     return make_tuple(lt, gt, found);
   }
 
@@ -184,7 +197,7 @@ namespace compressed_lists {
     if (node) {
       // bump ref_ct and return
       uint32_t* ref_ct = (uint32_t*)(node + 2*sizeof(uint16_t));
-      pbbs::write_add(ref_ct, 1);
+      pbbs::write_add(ref_ct, 1);   // 原子加一
       return node;
 //      size_t total_bytes = *((uint16_t*)(node + sizeof(uint16_t)));
 //      auto T = alloc_node(total_bytes);
@@ -195,6 +208,7 @@ namespace compressed_lists {
     return nullptr;
   }
 
+  // 合并两个压缩列表
   uchar* union_its(compressed_iter::read_iter& l_it, size_t l_size,
                    compressed_iter::read_iter& r_it, size_t r_size,
                    uintV src) {
@@ -225,7 +239,7 @@ namespace compressed_lists {
     return write_iter.finish();
   }
 
-
+  // 合并两个列表
   uchar* union_it_and_node(compressed_iter::read_iter& it, size_t l_size, uchar* r_node, uintV src) {
     assert(r_node);
     auto r_it = compressed_iter::read_iter(r_node, src);
@@ -244,6 +258,7 @@ namespace compressed_lists {
   }
 
   // returns r_it / l_it
+  // 求集合差集
   uchar* difference_its(compressed_iter::read_iter& l_it, size_t l_size,
                         compressed_iter::read_iter& r_it, size_t r_size,
                         uintV src) {
@@ -302,6 +317,7 @@ namespace compressed_lists {
     return false;
   }
 
+  // 求集合交集
   size_t intersect(compressed_iter::read_iter& l_it, size_t l_size,
                    compressed_iter::read_iter& r_it, size_t r_size) {
     size_t l_i = 0, r_i = 0;
@@ -332,6 +348,7 @@ namespace compressed_lists {
     return static_cast<size_t>(0);
   }
 
+  // 根据 predicate 过滤，生成新列表
   template <class P>
   uchar* filter(uchar* node, uintV src, P& p) {
     if (!node) return nullptr;

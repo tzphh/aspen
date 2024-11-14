@@ -11,7 +11,7 @@
 
 namespace tree_plus {
 
-  using AT = lists::array_type;
+  using AT = lists::array_type;   // uchar
 
   struct edge_entry {
     using key_t = uintV; // the 'head' edge of this node.
@@ -34,12 +34,12 @@ namespace tree_plus {
       }
     }
   };
-  using edge_list = aug_map<edge_entry>;
+  using edge_list = aug_map<edge_entry>; // augmented map
 
   struct treeplus {
     using Tree = typename edge_list::Tree;
     using Node = typename edge_list::node;
-    using Entry = typename edge_entry::entry_t; // pair<uintV, node>
+    using Entry = typename edge_entry::entry_t; // pair<uintV, node>  kv 结构
     using Tree_GC = Tree::GC;
 
     AT* plus;
@@ -69,8 +69,10 @@ namespace tree_plus {
     }
 
     // look up edges
+    // Returns true iff the edge src -> ngh exists.
     bool contains(uintV src, uintV ngh) const {
       if (root) {
+        // 寻找最近的前驱节点
         auto mp = Tree::previous_or_eq(root, ngh);
         if (mp) {
           const Entry& entry = Tree::get_entry(mp);
@@ -111,6 +113,9 @@ namespace tree_plus {
       T.root = nullptr;
     }
 
+
+    // 条件遍历 src 的邻居，当 f 返回 true 时终止遍历
+    // 先从 plus 中查找, 如果未找到且 root 存在，遍历 root 中的邻居节点并执行 f
     template <class F>
     bool iter_elms_cond(uintV src, F f) const {
       bool res = false;
@@ -191,6 +196,7 @@ namespace tree_plus {
     template <class P>
     static auto make_count_struct(P p, uintV src) { return count_struct<P>(p, src); }
 
+    // 统计满足谓词 p 的邻居节点数量
     template <class P>
     size_t count_nghs(uintV src, P p) const {
       size_t ct = 0;

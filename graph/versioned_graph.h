@@ -9,18 +9,21 @@
 #include <limits>
 
 namespace refct_utils {
+// 创建时间戳和引用计数 
 static uint64_t make_refct(uint32_t current_ts, uint32_t ref_ct) {
   return (static_cast<uint64_t>(current_ts) << 32UL) | static_cast<uint64_t>(ref_ct);
 }
+
+// 提取引用计数
 static uint32_t get_rfct(uint64_t ts_and_ct) {
   static constexpr const uint64_t mask = std::numeric_limits<uint32_t>::max();
   return ts_and_ct & mask;
 }
 }  // namespace refct_utils
 
-using ts = uint32_t;
+using ts = uint32_t;   // timestamp
 static constexpr const ts max_ts = std::numeric_limits<uint32_t>::max();
-static constexpr const ts tombstone = max_ts - 1;
+static constexpr const ts tombstone = max_ts - 1;  // 用于标记哈希表中的删除或无效条目
 
 template<class snapshot_graph>
 struct versioned_graph {
@@ -75,7 +78,7 @@ struct versioned_graph {
     current_timestamp = 0;
     size_t initial_ht_size = 512;
     typename table::T empty = make_tuple(max_ts, make_tuple(0, nullptr));
-    live_versions = table(initial_ht_size, empty, tombstone);
+    live_versions = table(initial_ht_size, empty, tombstone);      // 初始化为空的哈希表
 
     auto initial_graph = nullptr;
     ts timestamp = current_timestamp++;
@@ -96,7 +99,7 @@ struct versioned_graph {
   versioned_graph(size_t n, size_t m, uintE* offsets, uintV* edges) : current_timestamp(0) {
     size_t initial_ht_size = 512;
     typename table::T empty = make_tuple(max_ts, make_tuple(0, nullptr));
-    live_versions = table(initial_ht_size, empty, tombstone);
+    live_versions = table(initial_ht_size, empty, tombstone);  // 初始化hash table
 
     auto G = snapshot_graph(n, m, offsets, edges);
     ts timestamp = current_timestamp++;
@@ -107,6 +110,8 @@ struct versioned_graph {
   ts latest_timestamp() { return current_timestamp - 1; }
 
   // Lock-free, but not wait-free
+  // 用于获取最新的图版本
+  // 它首先查找最新的版本，并确保该版本的引用计数大于零。通过原子操作 (atomic_compare_and_swap) 递增引用计数，然后返回该版本的快照
   version acquire_version() {
     while (true) {
       size_t latest_ts = latest_timestamp();
@@ -133,6 +138,7 @@ struct versioned_graph {
     }
   }
 
+  // 当引用计数降到 1 时（说明没有其他读者正在使用该版本），它会释放图的资源，并通过垃圾回收删除该图节点
   void release_version(version&& S) {
     ts timestamp = S.timestamp;
     T* table_entry = S.table_entry;

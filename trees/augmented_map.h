@@ -163,7 +163,7 @@ struct aug_map_full_entry : entry {
 };
 
 template <class _Entry, class Balance=weight_balanced_tree>
-using aug_map =
+using   aug_map =
   aug_map_<aug_map_full_entry<_Entry>,
   typename Balance::template
   balance<aug_node<typename Balance::data,aug_map_full_entry<_Entry>>>>;

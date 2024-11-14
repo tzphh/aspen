@@ -5,6 +5,7 @@
 using namespace std;
 
 template <class K, class V>
+// 开放定址哈希表
 class sequentialHT {
  public:
   typedef tuple<K,V> T;
@@ -13,7 +14,7 @@ class sequentialHT {
   size_t mask;
   T empty;
   K max_key;
-  K tombstone;
+  K tombstone;   // 删除标记,占位符
   T* table;
 
   inline size_t toRange(size_t h) {return h & mask;}

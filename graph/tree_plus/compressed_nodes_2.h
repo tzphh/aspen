@@ -233,6 +233,7 @@ namespace compressed_lists {
     return 0;
   }
 
+  // node gc
   inline void deallocate(uchar* node_int) {
     if (node_int) {
       uint32_t* ref_ct = (uint32_t*)(node_int + 2*sizeof(uint16_t));

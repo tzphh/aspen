@@ -56,7 +56,7 @@ struct sym_immutable_graph_tree_plus {
       }
     }
   };
-  using vertices = aug_map<vertex_entry>;
+  using vertices = aug_map<vertex_entry>;   // 是一个 aug_map 类型，保存了图的所有顶点
   using vertices_tree = typename vertices::Tree;
   using vertices_GC = typename vertices::GC;
 
