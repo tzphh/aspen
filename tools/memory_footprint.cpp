@@ -17,7 +17,7 @@ void memory_footprint(commandLine& P) {
   auto VG = initialize_treeplus_graph(P);
   treeplus_graph::print_stats();
   // Print memory statistics of the compressed graph.
-  auto S = VG.acquire_version();
+  auto S = VG.acquire_version();        // 获取最新的图版本
 
   S.graph.print_compression_stats();
   print_stats(S.graph);

@@ -5,18 +5,19 @@
 using node_size_t = unsigned int;
 //using node_size_t = size_t;
 
+// 基础树节点
 template<class balance, class _ET>
 struct basic_node {
   using ET = _ET;
 
   struct node : balance {
     node* lc;  node* rc;
-    ET entry;
-    node_size_t s;
-    node_size_t ref_cnt;
+    ET entry;             // 存储节点的实际数据（类型为 ET）
+    node_size_t s;        // 节点的大小，表示以该节点为根的子树的节点数目
+    node_size_t ref_cnt;  // 引用计数
   };
 
-  using allocator = list_allocator<node>;
+  using allocator = list_allocator<node>;   // 内存池分配器
 
   static node_size_t size(node* a) {
     return (a == NULL) ? 0 : a->s;

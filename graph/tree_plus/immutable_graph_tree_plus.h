@@ -532,50 +532,51 @@ struct sym_immutable_graph_tree_plus {
     return sym_immutable_graph_tree_plus(std::move(V_next));
   }
 
-  static void init(size_t n, size_t m) {
+  static void init(size_t n, size_t m) {      // n 顶点数量
     // edge_lists are the 'tree nodes' in edgelists
     using edge_list = tree_plus::edge_list;
-    edge_list::init(); edge_list::reserve(n/16);
+    edge_list::init(); edge_list::reserve(n / 16);    
 
     lists::init(n);
 
-    vertices::init(); vertices::reserve(n/300);
+    vertices::init(); vertices::reserve(n / 300);
   }
 
   // frees offsets and edges.
+  // 构造图数据
   sym_immutable_graph_tree_plus(size_t n, size_t m, uintE* offsets, uintV* edges) {
     init(n, m);
 
     print_stats();
-    cout << "stats before build" << endl << endl;
+    cout << " ------------ stats before build ------------ " << endl << endl;
 
     timer build_t; build_t.start();
     using KV = pair<uintV, edge_struct>;
-    auto new_verts = pbbs::sequence<KV>(n);
+    auto new_verts = pbbs::sequence<KV>(n);    // 初始化sequence
     parallel_for(0, n, [&] (size_t i) { // TODO: granularity
       size_t off = offsets[i];
       size_t deg = ((i == (n-1)) ? m : offsets[i+1]) - off;
-      auto S = pbbs::delayed_seq<uintV>(deg, [&] (size_t j) { return edges[off + j]; });
-
+      auto S = pbbs::delayed_seq<uintV>(deg, [&] (size_t j) { return edges[off + j]; });  // 利用函数延迟计算序列
+      
       if (deg > 0) {
-        new_verts[i] = make_pair(i, edge_struct(S, i));
+        new_verts[i] = make_pair(i, edge_struct(S, i));  // 构造每个顶点的邻居所对应的C-tree
       } else {
         new_verts[i] = make_pair(i, edge_struct());
       }
 //      new_verts[i].second.check_consistency(i);
     }, 1);
-    cout << "built all vertices" << endl;
+    cout << "------------ built all vertices ------------" << endl;
 
     print_stats();
-    cout << "stats after parallel build" << endl << endl;
+    cout << " ------------ stats after parallel build ------------ " << endl << endl;
 
     auto replace = [] (const edge_struct& a, const edge_struct& b) {return b;};
-    V = vertices_tree::multi_insert_sorted(nullptr, new_verts.begin(), new_verts.size(), replace, true);
+    V = vertices_tree::multi_insert_sorted(nullptr, new_verts.begin(), new_verts.size(), replace, true);  // 插入BST
 
     print_stats();
-    cout << "stats after multi_insert" << endl << endl;
+    cout << " ------------ stats after multi_insert ------------ " << endl << endl;
 
-    pbbs::free_array(offsets); pbbs::free_array(edges);
+    pbbs::free_array(offsets); pbbs::free_array(edges); 
     new_verts.clear();
     build_t.next("Build time");
 
@@ -639,9 +640,9 @@ struct sym_immutable_graph_tree_plus {
     size_t m = num_edges();
 
     lists::print_stats();
-    size_t edge_list_bytes = edge_list::get_used_bytes();
-    size_t lists_bytes = lists::get_used_bytes();
-    size_t vertex_bytes = vertices::get_used_bytes();
+    size_t edge_list_bytes = edge_list::get_used_bytes();    //边列表占用的内存大小
+    size_t lists_bytes = lists::get_used_bytes();            //压缩列表占用的内存大小
+    size_t vertex_bytes = vertices::get_used_bytes();        //顶点树占用的内存大小
     size_t total_bytes = vertex_bytes + edge_list_bytes + lists_bytes;
     cout << endl << "== Aspen Difference Encoded Stats (DE) ==" << endl;
     cout << "vertex tree: used nodes = " << vertices::used_node() << " size/node = " << vertices::node_size() << " memory used = " << format_gb(vertex_bytes) << " GB" << endl;

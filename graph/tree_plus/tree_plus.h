@@ -374,16 +374,16 @@ namespace tree_plus {
     treeplus() : plus(nullptr), root(nullptr) {}
 
 
-    // Treeplus constructor
+    // Treeplus constructor 构造函数，S是邻居序列
     template <class SQ>
     treeplus(SQ const &S, uintV src, pbbs::flags fl = pbbs::no_flag) {
       if (S.size() == 0) {
         plus = nullptr; root = nullptr; return; //deg = 0; return;
       }
 
-      bool run_seq = fl & pbbs::fl_sequential;
+      bool run_seq = fl & pbbs::fl_sequential;   // 判断是否使用顺序执行（由标志 pbbs::fl_sequential 控制）
 
-      // 1. Compute the index of each head
+      // 1. Compute the index of each head 计算顶点是否是head,标记为starts
       constexpr const size_t start_array_size = 500;
       uintV starts_backing[start_array_size];
       uintV* starts = (S.size() > start_array_size) ? pbbs::new_array_no_init<uintV>(S.size()) : starts_backing;
@@ -399,23 +399,23 @@ namespace tree_plus {
       };
       auto starts_seq = pbbs::make_range(starts, starts + S.size());
       auto cpy_monoid = pbbs::make_monoid(cpy, UINT_V_MAX);
-      pbbs::scan_inplace(starts_seq, cpy_monoid, pbbs::fl_scan_inclusive | fl);
+      pbbs::scan_inplace(starts_seq, cpy_monoid, pbbs::fl_scan_inclusive | fl);  // 前缀扫描，starts 数组中的每个元素表示对应元素所属的head
 
       // 3. Find the index of the first head (b probes in expectation)
       size_t first_ind = S.size();
       for (size_t i=0; i<S.size(); i++) {
         if (starts[i] != UINT_V_MAX) {
-          first_ind = i;
+          first_ind = i;             
           break;
         }
       }
 
-      // 4. Generate the plus
+      // 4. Generate the plus,生成前缀plus部分
       plus = lists::generate_plus(S, first_ind, src);
 
       // 5. Pack out the heads
-      auto is_head_seq = pbbs::delayed_seq<bool>(S.size(), [&] (size_t i) { return lists::is_head(S[i]); });
-      uintV* head_idxs = starts;
+      auto is_head_seq = pbbs::delayed_seq<bool>(S.size(), [&] (size_t i) { return lists::is_head(S[i]); }); // 延迟计算
+      uintV* head_idxs = starts;      
       size_t k = 0;
       for (size_t i=0; i<S.size(); i++) {
         if (is_head_seq[i]) head_idxs[k++] = i;
@@ -424,25 +424,25 @@ namespace tree_plus {
       using K = uintV; using V = AT*; using KV = pair<K, V>;
       constexpr const size_t kv_arr_size = 20;
       KV kv_stack[kv_arr_size];
-      KV* kvs = (head_indices.size() > kv_arr_size) ? pbbs::new_array_no_init<KV>(head_indices.size()) : kv_stack;
+      KV* kvs = (head_indices.size() > kv_arr_size) ? pbbs::new_array_no_init<KV>(head_indices.size()) : kv_stack;   // 重新分配空间
       auto KV_seq = pbbs::make_range(kvs, kvs+head_indices.size());
 
       // 6. Generate each head node
       parallel_for(0, head_indices.size(), [&] (size_t i) {
-        uintV head_index = head_indices[i];
-        uintV key = S[head_index];
-        get<0>(KV_seq[i]) = key;
-        V& noderef = get<1>(KV_seq[i]);
-        uintV start = head_index + 1; // don't include key
-        uintV end = (i == (head_indices.size() - 1)) ? S.size() : head_indices[i+1];
+        uintV head_index = head_indices[i];      // head索引
+        uintV key = S[head_index];               // head
+        get<0>(KV_seq[i]) = key;                 // 设置键值对的键为当前 head 的 key
+        V& noderef = get<1>(KV_seq[i]);          // 获取键值对的值部分（一个引用）
+        uintV start = head_index + 1;            // tree node序列的起点
+        uintV end = (i == (head_indices.size() - 1)) ? S.size() : head_indices[i+1];   // tree node序列的终点
         noderef = lists::generate_tree_node(key, src, S, start, end);
       }, run_seq ? std::numeric_limits<long>::max() : 5); // TODO: granularity
 
       // 7. insert all heads into the edges tree
-      auto tree = edge_list::multi_insert_sorted(edge_list(), KV_seq); // run_seq
+      auto tree = edge_list::multi_insert_sorted(edge_list(), KV_seq); // run_seq, 生成C-tree, 将所有<head,V> 插入到一个排序树中, 就是 edge_list
       root = tree.root; tree.root = nullptr;
 //      deg = S.size();
-      if (S.size() > start_array_size) { pbbs::free_array(starts); }
+      if (S.size() > start_array_size) { pbbs::free_array(starts); }      
       if (head_indices.size() > kv_arr_size) { pbbs::free_array(kvs); }
     }
   };

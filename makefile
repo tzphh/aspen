@@ -5,7 +5,8 @@ JEMALLOCLD = $(shell jemalloc-config --libdir)
 JEMALLOC = -L$(JEMALLOCLD) -ljemalloc
 endif
 
-OPT = -O3 -g
+# OPT = -O3 -g
+OPT = -O0 -g
 
 CONCEPTS = -fconcepts -DCONCEPTS
 CFLAGS = -DEDGELONG -mcx16 $(OPT) -ldl -std=c++17 -march=native -Wall -Wno-subobject-linkage -DUSEMALLOC -DNDEBUG

@@ -101,10 +101,11 @@ struct versioned_graph {
     typename table::T empty = make_tuple(max_ts, make_tuple(0, nullptr));
     live_versions = table(initial_ht_size, empty, tombstone);  // 初始化hash table
 
-    auto G = snapshot_graph(n, m, offsets, edges);
+    auto G = snapshot_graph(n, m, offsets, edges);  // 构造图的快照
     ts timestamp = current_timestamp++;
+    // 时间戳版本、引用计数管理
     live_versions.insert(make_tuple(timestamp, make_tuple(refct_utils::make_refct(timestamp, 1), G.get_root())));
-    G.clear_root();
+    G.clear_root();  // 释放图, 图G不再持有对根节点的引用,图的生命周期由 live_versions 负责
   }
 
   ts latest_timestamp() { return current_timestamp - 1; }
