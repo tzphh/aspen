@@ -142,7 +142,7 @@ void run_algorithm(commandLine& P) {
   auto test_id = P.getOptionValue("-t", "BFS");
   size_t threads = num_workers();
 
-  auto VG = initialize_treeplus_graph(P);
+  auto VG = initialize_treeplus_graph(P);   // Load graph, 通过live versions 来管理图数据
   // Run the algorithm on it
   size_t rounds = P.getOptionLongValue("-rounds", 4);
   double total_time = 0.0;
@@ -152,8 +152,8 @@ void run_algorithm(commandLine& P) {
     cin >> ok;
   }
   for (size_t i=0; i<rounds; i++) {
-    auto S = VG.acquire_version();
-    double tm = execute(S.graph, P, test_id);
+    auto S = VG.acquire_version();  // 获取最新版本的快照
+    double tm = execute(S.graph, P, test_id);  // S.graph获取图
     std::cout << "RESULT"  << fixed << setprecision(6)
   	 << "\ttest=" << test_id
   	 << "\ttime=" << tm

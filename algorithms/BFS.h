@@ -25,7 +25,7 @@ void BFS(Graph& G, uintV src, bool print_statistics=false) {
   while (!frontier.is_empty()) {
     reachable += frontier.size();
     // cout << frontier.size() << endl;
-    auto output = G.edge_map(frontier, BFS_F(parents.begin()), sparse_t, dense_t, fetch_t, other_t, stay_dense);
+    auto output = G.edge_map(frontier, BFS_F(parents.begin()), sparse_t, dense_t, fetch_t, other_t, stay_dense);  // 计算下一层
     frontier.del();
     frontier = output;
   }
@@ -45,12 +45,12 @@ void BFS_Fetch(Graph& G, uintV src, bool print_statistics=false) {
   timer bfs_t; bfs_t.start();
   size_t n = G.num_vertices();
   timer ss; ss.start();
-  auto vtxs = G.fetch_all_vertices();
+  auto vtxs = G.fetch_all_vertices();    // 预取图中所有的顶点快照
   if (print_statistics) {
     ss.stop(); ss.reportTotal("snapshot time");
   }
 
-  auto frontier = vertex_subset(n, src);
+  auto frontier = vertex_subset(n, src);  // A vertex set containing one element
   timer sparse_t, dense_t, other_t;
   auto parents = pbbs::sequence<uintV>(n, [&] (size_t i) { return UINT_V_MAX; });
   parents[src] = src;

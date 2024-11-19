@@ -11,6 +11,11 @@ struct vertex_subset {
   using D = bool;
   using VS = vertex_subset;
 
+  size_t n, m;   // 顶点总数 `n` 和当前顶点子集大小 `m`
+  S* s;          // 稀疏表示：顶点集合数组
+  D* d;          // 密集表示：布尔数组，d[i] = true 表示顶点 i 存在于集合中
+  bool is_dense; // 是否为密集表示
+  
   // An empty vertex set.
   vertex_subset(size_t _n) : n(_n), m(0), s(nullptr), d(nullptr), is_dense(0) {}
 
@@ -89,11 +94,6 @@ struct vertex_subset {
     auto D = pbbs::sequence<E>(n, get_val);
     return pbbs::reduce(D, red_m);
   };
-
-  size_t n, m;
-  S* s;
-  D* d;
-  bool is_dense;
 };
 
 template<class F>

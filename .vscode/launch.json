@@ -5,10 +5,16 @@
             "name": "C++ 调试",
             "type": "cppdbg",
             "request": "launch",
-            "program": "/home/tzp/workspace/aspen/memory_footprint", // 可执行文件路径
+            // "program": "/home/tzp/workspace/aspen/memory_footprint", // 可执行文件路径
+            // "args": [
+            //     "-f", "/home/tzp/dataset/soc/soc-livejournal.adj"    
+            // ],
+            "program": "/home/tzp/workspace/aspen/run_static_algorithm",
             "args": [
-                //"-f", "/home/tzp/workspace/wharf/experiments/data/cora/cora.txt"
-                "-f", "/home/tzp/dataset/soc/soc-livejournal.adj"
+                "-t", "BFS",
+                "-r", "3",
+                "-src", "0",
+                "-f", "/home/tzp/dataset/soc/soc-livejournal.adj"    
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
